@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Sending - Admin Panel</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/../favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/../favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/../favicon/favicon-16x16.png">
+    <link rel="manifest" href="/../favicon/site.webmanifest">
+    <link rel="shortcut icon" href="/../favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/../favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/../favicon/android-chrome-512x512.png">
+    <link rel="stylesheet" href="/admin/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="/env.js" defer></script>
+    <style>
+        .file-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-preview.active {
+            display: block;
+        }
+
+        .file-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-icon {
+            font-size: 48px;
+            color: #351C42;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .progress-bar-container {
+            margin-top: 15px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            height: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #351C42;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .upload-status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .upload-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .upload-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: flex-start;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .step-item.active {
+            opacity: 1;
+        }
+
+        .step-item.done {
+            opacity: 0.8;
+        }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-item.active .step-icon {
+            background: #351C42;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+
+        .step-item.done .step-icon {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .progress-bar-bg {
+            background: #f0f0f0;
+            height: 4px;
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .step-item.active .progress-bar-bg {
+            display: block;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #351C42;
+            width: 0%;
+            transition: width 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated stripes for active processing */
+        .progress-bar-fill.processing::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background-image: linear-gradient(-45deg,
+                    rgba(255, 255, 255, 0.2) 25%,
+                    transparent 25%,
+                    transparent 50%,
+                    rgba(255, 255, 255, 0.2) 50%,
+                    rgba(255, 255, 255, 0.2) 75%,
+                    transparent 75%,
+                    transparent);
+            z-index: 1;
+            background-size: 50px 50px;
+            animation: move 2s linear infinite;
+        }
+
+        @keyframes move {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 50px 50px;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(53, 28, 66, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(53, 28, 66, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(53, 28, 66, 0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="view">
+            <header>
+                <div class="header-brand">
+                    <img src="/images/chkarunyatrustlogo.png" alt="Logo" class="dashboard-logo">
+                    <h1>File Sending</h1>
+                </div>
+                <div class="header-right">
+                    <button onclick="window.location.href='/admin'" class="nav-btn">← Back to Dashboard</button>
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </header>
+
+            <main>
+                <div class="toolbar">
+                    <h2>Secure File Transfer</h2>
+                    <p style="color: #666; margin: 5px 0 0 0;">Upload files to Firebase Storage and email the link</p>
+                </div>
+
+                <div class="file-send-container">
+                    <!-- Upload Form -->
+                    <div class="file-form-card">
+                        <h3>📤 Send New File</h3>
+                        <form id="file-send-form">
+                            <div class="form-group">
+                                <label>Recipient Email *</label>
+                                <input type="email" id="recipient-email" required placeholder="recipient@example.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Email Subject</label>
+                                <input type="text" id="email-subject" value="File from Admin"
+                                    placeholder="Enter subject">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Message (Optional)</label>
+                                <textarea id="email-message" rows="3" placeholder="Add a message..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Select File (Image or PDF) *</label>
+                                <input type="file" id="file-input" accept="image/*,application/pdf" required>
+                                <small style="color: #666; display: block; margin-top: 5px;">Supported: JPG, PNG,
+                                    PDF</small>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div id="file-preview" class="file-preview">
+                                <div id="preview-content"></div>
+                                <div class="file-info">
+                                    <strong>File:</strong> <span id="file-name"></span><br>
+                                    <strong>Type:</strong> <span id="file-type"></span><br>
+                                    <strong>Size:</strong> <span id="file-size"></span>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Progress UI -->
+                            <div id="status-container" style="display: none; margin-top: 20px;">
+                                <div class="step-item" id="step-upload">
+                                    <div class="step-icon">⚪</div>
+                                    <div class="step-content">
+                                        <div class="step-title">Uploading File</div>
+                                        <div class="step-desc">Transferring to secure storage... <span
+                                                id="upload-pct"></span></div>
+                                        <div class="progress-bar-bg">
+                                            <div id="upload-bar" class="progress-bar-fill"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="step-item" id="step-email">
+                                    <div class="step-icon">⚪</div>
+                                    <div class="step-content">
+                                        <div class="step-title">Sending Notification</div>
+                                        <div class="step-desc"> emailing download link to patient...</div>
+                                    </div>
+                                </div>
+                                <div class="step-item" id="step-log">
+                                    <div class="step-icon">⚪</div>
+                                    <div class="step-content">
+                                        <div class="step-title">Finalizing</div>
+                                        <div class="step-desc">Saving transaction log...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Success/Error Message Area -->
+                            <div id="result-message"
+                                style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px;"></div>
+
+
+                            <!-- Upload Status -->
+                            <div id="upload-status" class="upload-status"></div>
+
+                            <button type="submit" class="primary-btn" style="width: 100%; margin-top: 20px;">
+                                Send File
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- File Logs -->
+                    <div class="file-logs-card">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">📋 History Log</h3>
+                            <div class="filters" style="display: flex; gap: 10px;">
+                                <select id="filter-status"
+                                    style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                                    <option value="all">All Status</option>
+                                    <option value="success">Success</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                                <input type="date" id="filter-date"
+                                    style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            </div>
+                        </div>
+
+                        <table id="file-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Recipient</th>
+                                    <th>File Type</th>
+                                    <th>Link</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-logs-list">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #999;">Loading history...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ... Toast ... -->
+
+    <script type="module">
+        // ... Imports ...
+        import {
+            logoutAdmin,
+            monitorAuthState,
+            uploadFileToStorage,
+            createReportLog,
+            getFileLogs
+        } from '/js/firebase-service.js';
+
+        // ... (Existing Imports) ...
+
+        // ... (Existing code for EmailJS etc) ...
+
+        // ... (Existing code for Form Submission) ...
+
+        // Global variable for filtering
+        let allLogs = [];
+
+        async function fetchFileLogs() {
+            try {
+                allLogs = await getFileLogs();
+                // 1. Sort
+                allLogs.sort((a, b) => {
+                    const dateA = new Date(a.sentAt || a.createdAt);
+                    const dateB = new Date(b.sentAt || b.createdAt);
+                    return dateB - dateA;
+                });
+                renderLogs();
+            } catch (error) {
+                console.error("Error fetching logs:", error);
+                document.getElementById('file-logs-list').innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading history</td></tr>';
+            }
+        }
+
+        function renderLogs() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const dateFilter = document.getElementById('filter-date').value;
+            const container = document.getElementById('file-logs-list');
+
+            const filtered = allLogs.filter(log => {
+                // Status Filter
+                if (statusFilter !== 'all') {
+                    const logStatus = (log.status || '').toLowerCase();
+                    if (statusFilter === 'success' && logStatus !== 'success') return false;
+                    if (statusFilter === 'failed' && logStatus === 'success') return false;
+                }
+
+                // Date Filter (Convert to YYYY-MM-DD)
+                if (dateFilter) {
+                    const logDate = new Date(log.sentAt || log.createdAt).toISOString().split('T')[0];
+                    if (logDate !== dateFilter) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No history matches filters</td></tr>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(log => `
+                 <tr>
+                    <td>${new Date(log.sentAt || log.createdAt).toLocaleDateString()} ${new Date(log.sentAt || log.createdAt).toLocaleTimeString()}</td>
+                    <td>${log.patientEmail || log.patientName || 'Unknown'}</td>
+                    <td><span class="badge">${log.fileType || 'File'}</span></td>
+                    <td>
+                        ${log.fileUrl
+                    ? `<a href="${log.fileUrl}" target="_blank" style="color: #351C42; font-weight: 600;">Download</a>`
+                    : '<span style="color:red">Failed</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Filter Listeners
+        document.getElementById('filter-status').addEventListener('change', renderLogs);
+        document.getElementById('filter-date').addEventListener('change', renderLogs);
+
+        // Initialize
+        fetchFileLogs();
+    </script>
+</body>
+
+</html>
+

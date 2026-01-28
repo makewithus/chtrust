@@ -1,0 +1,140 @@
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "server.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "public/**",
+                    "data/**"
+                ]
+            }
+        },
+        {
+            "src": "**/*.html",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "**/*.htm",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "68*/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "images/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "assets/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "ajax/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "favicon/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "gsap/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "static/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "data/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "service/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "blog-post/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "blog-category/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "causes/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "template-info/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "public/**",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "*.{jpg,jpeg,png,gif,svg,mp4,webm}",
+            "use": "@vercel/static"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/videos/(.*)",
+            "dest": "/public/videos/$1"
+        },
+        {
+            "src": "/js/(.*)",
+            "dest": "/public/js/$1"
+        },
+        {
+            "src": "/admin/script.js",
+            "dest": "/public/admin/script.js"
+        },
+        {
+            "src": "/admin/style.css",
+            "dest": "/public/admin/style.css"
+        },
+        {
+            "src": "/admin/preview.html",
+            "dest": "/public/admin/preview.html"
+        },
+        {
+            "src": "/admin/send-files.html",
+            "dest": "/public/admin/send-files.html"
+        },
+        {
+            "src": "/admin/file-sending.html",
+            "dest": "/public/admin/file-sending.html"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/server.js"
+        },
+        {
+            "src": "/admin",
+            "dest": "/public/admin/index.html"
+        },
+        {
+            "src": "/admin/",
+            "dest": "/public/admin/index.html"
+        },
+        {
+            "src": "/env.js",
+            "dest": "/server.js"
+        },
+        {
+            "src": "/blog-post/(.*)",
+            "dest": "/server.js"
+        },
+        {
+            "handle": "filesystem"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/$1"
+        }
+    ]
+}

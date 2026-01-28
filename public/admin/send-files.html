@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Files - Admin Panel</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/../favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/../favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/../favicon/favicon-16x16.png">
+    <link rel="manifest" href="/../favicon/site.webmanifest">
+    <link rel="shortcut icon" href="/../favicon/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/../favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/../favicon/android-chrome-512x512.png">
+    <link rel="stylesheet" href="/admin/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="/env.js" defer></script>
+    <style>
+        .file-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .file-preview.active {
+            display: block;
+        }
+
+        .file-preview img {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-icon {
+            font-size: 48px;
+            color: #351C42;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .upload-status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .upload-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .upload-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #351C42;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="view">
+            <header>
+                <div class="header-brand">
+                    <img src="/images/chkarunyatrustlogo.png" alt="Logo" class="dashboard-logo">
+                    <h1>Send Files</h1>
+                </div>
+                <div class="header-right">
+                    <button onclick="window.location.href='/admin'" class="nav-btn">← Back to Dashboard</button>
+                    <button id="logout-btn">Logout</button>
+                </div>
+            </header>
+
+            <main>
+                <div class="toolbar">
+                    <h2>Upload and Send Files</h2>
+                    <p style="color: #666; margin: 5px 0 0 0;">Send images or PDF documents to patients via email</p>
+                </div>
+
+                <div class="file-send-container">
+                    <!-- Upload Form -->
+                    <div class="file-form-card">
+                        <h3>📤 New File Transfer</h3>
+                        <form id="file-send-form">
+                            <div class="form-group">
+                                <label>Patient Name *</label>
+                                <input type="text" id="patient-name" required placeholder="Enter patient name">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" id="patient-phone" required placeholder="+91 XXXXX XXXXX">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Email Address *</label>
+                                <input type="email" id="patient-email" required placeholder="patient@example.com">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Select File *</label>
+                                <input type="file" id="patient-file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.csv" required>
+                                <small style="color: #666; display: block; margin-top: 5px;">Supported: Images (JPG, PNG, GIF), PDF, Word (.doc, .docx), Excel (.xls, .xlsx), Text (.txt, .csv)</small>
+                            </div>
+
+                            <!-- File Preview -->
+                            <div id="file-preview" class="file-preview">
+                                <div id="preview-content"></div>
+                                <div class="file-info">
+                                    <strong>File:</strong> <span id="file-name"></span><br>
+                                    <strong>Type:</strong> <span id="file-type"></span><br>
+                                    <strong>Size:</strong> <span id="file-size"></span>
+                                </div>
+                            </div>
+
+                            <!-- Upload Status -->
+                            <div id="upload-status" class="upload-status"></div>
+
+                            <button type="submit" class="primary-btn" style="width: 100%; margin-top: 20px;">
+                                Send File
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- File Logs -->
+                    <div class="file-logs-card">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0;">📋 Recent Transfers</h3>
+                            <div class="filters" style="display: flex; gap: 10px;">
+                                <select id="filter-status"
+                                    style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                                    <option value="all">All Status</option>
+                                    <option value="success">Success</option>
+                                    <option value="failed">Failed</option>
+                                </select>
+                                <input type="date" id="filter-date"
+                                    style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            </div>
+                        </div>
+                        <table id="file-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>File</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-logs-list">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; color: #999;">No transfers yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script type="module">
+        import {
+            logoutAdmin,
+            monitorAuthState,
+            uploadReportFile,
+            createReportLog,
+            getFileLogs
+        } from '/js/firebase-service.js';
+
+        // Initialize EmailJS (client-side only)
+        if (typeof emailjs !== 'undefined') {
+            try {
+                emailjs.init(window.env?.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "EXjUjLmLuDHOHsrMZ");
+            } catch (e) {
+                console.error("EmailJS Init Error:", e);
+            }
+        }
+
+        // Auth check
+        monitorAuthState((user) => {
+            if (!user) {
+                window.location.href = '/admin';
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await logoutAdmin();
+            location.reload();
+        });
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // File preview
+        const fileInput = document.getElementById('patient-file');
+        const filePreview = document.getElementById('file-preview');
+        const previewContent = document.getElementById('preview-content');
+        const fileName = document.getElementById('file-name');
+        const fileType = document.getElementById('file-type');
+        const fileSize = document.getElementById('file-size');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                filePreview.classList.remove('active');
+                return;
+            }
+
+            fileName.textContent = file.name;
+            
+            // Determine file type for display
+            let displayType = 'Document';
+            if (file.type.includes('image')) {
+                displayType = 'Image';
+            } else if (file.type.includes('pdf')) {
+                displayType = 'PDF Document';
+            } else if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                displayType = 'Word Document';
+            } else if (file.type.includes('sheet') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+                displayType = 'Excel Spreadsheet';
+            } else if (file.type.includes('text') || file.name.endsWith('.txt')) {
+                displayType = 'Text File';
+            } else if (file.name.endsWith('.csv')) {
+                displayType = 'CSV File';
+            }
+            
+            fileType.textContent = displayType;
+            fileSize.textContent = (file.size / 1024).toFixed(2) + ' KB';
+
+            if (file.type.includes('image')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewContent.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    filePreview.classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type.includes('pdf')) {
+                previewContent.innerHTML = '<div class="file-icon">📄</div>';
+                filePreview.classList.add('active');
+            } else if (file.type.includes('word') || file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                previewContent.innerHTML = '<div class="file-icon">📝</div>';
+                filePreview.classList.add('active');
+            } else if (file.type.includes('sheet') || file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
+                previewContent.innerHTML = '<div class="file-icon">📊</div>';
+                filePreview.classList.add('active');
+            } else {
+                previewContent.innerHTML = '<div class="file-icon">📎</div>';
+                filePreview.classList.add('active');
+            }
+        });
+
+        // Form submission
+        const fileForm = document.getElementById('file-send-form');
+        const uploadStatus = document.getElementById('upload-status');
+
+        fileForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = fileForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Sending...';
+            submitBtn.classList.add('disabled');
+            submitBtn.disabled = true;
+
+            const patientName = document.getElementById('patient-name').value;
+            const phoneNumber = document.getElementById('patient-phone').value;
+            const email = document.getElementById('patient-email').value;
+            const file = fileInput.files[0];
+
+            if (!file) {
+                uploadStatus.className = 'upload-status error';
+                uploadStatus.textContent = 'Please select a file';
+                uploadStatus.style.display = 'block';
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+                return;
+            }
+
+            try {
+                // 1. Upload to Cloudinary (Reports Folder)
+                const { url, format } = await uploadReportFile(file);
+
+                // 2. Send Email via EmailJS
+                const templateParams = {
+                    file_url: url,
+                    to_email: email,
+                    patient_email: email,
+                    email: email,
+                    to_name: patientName,
+                    patient_name: patientName,
+                    name: patientName,
+                    link: url,
+                    url: url,
+                    download_link: url,
+                    file_link: url,
+                    message: `Here is your file: ${url}`,
+                    reply_to: 'admin@karunyacharitabletrust.org',
+                    from_name: 'Karunya Trust'
+                };
+
+                if (typeof emailjs === 'undefined') {
+                    throw new Error('EmailJS is not loaded. Please refresh the page.');
+                }
+
+                const serviceId = window.env?.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_xjugpoi";
+                const templateId = window.env?.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_72p6u49";
+                const publicKey = window.env?.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "EXjUjLmLuDHOHsrMZ";
+                await emailjs.send(serviceId, templateId, templateParams, publicKey);
+
+                console.log("EmailJS Success");
+                showToast('Report sent successfully!', 'success');
+                fileForm.reset();
+
+                // 3. Log to Firestore
+                try {
+                    await createReportLog({
+                        patientName,
+                        phoneNumber,
+                        patientEmail: email,
+                        fileUrl: url,
+                        fileType: format,
+                        status: 'success'
+                    });
+                    fetchFileLogs();
+                } catch (dbError) {
+                    console.error("Firestore Error:", dbError);
+                }
+
+            } catch (error) {
+                console.error(error);
+                uploadStatus.className = 'upload-status error';
+                uploadStatus.textContent = '✗ Error: ' + (error.text || error.message);
+                alert('Email Send Failed: ' + (error.text || error.message));
+
+                try {
+                    await createReportLog({
+                        patientEmail: email,
+                        fileUrl: '',
+                        fileType: 'unknown',
+                        status: 'failed'
+                    });
+                } catch (e) { console.error("Failed to log error", e); }
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Expose delete function to global scope carefully
+        window.confirmDeleteLog = async (id, btn) => {
+            if (!confirm('Are you sure you want to delete this history record? The file and email will not be affected.')) return;
+
+            const row = btn.closest('tr');
+            try {
+                if (row) row.style.opacity = '0.5';
+                await deleteReportLog(id);
+                if (row) row.remove();
+                showToast('Record deleted');
+
+                // Check if empty
+                if (document.querySelectorAll('#file-logs-list tr').length === 0) {
+                    document.getElementById('file-logs-list').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">No transfers yet</td></tr>';
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Delete failed: ' + e.message);
+                if (row) row.style.opacity = '1';
+            }
+        };
+
+        // Global variable for filtering
+        let allLogs = [];
+
+        async function fetchFileLogs() {
+            try {
+                allLogs = await getFileLogs();
+                // Initial Sort
+                allLogs.sort((a, b) => {
+                    const dateA = new Date(a.sentAt || a.createdAt);
+                    const dateB = new Date(b.sentAt || b.createdAt);
+                    return dateB - dateA;
+                });
+                renderLogs();
+            } catch (error) {
+                console.error('Error fetching logs', error);
+                document.getElementById('file-logs-list').innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Error loading</td></tr>';
+            }
+        }
+
+        function renderLogs() {
+            const statusFilter = document.getElementById('filter-status').value;
+            const dateFilter = document.getElementById('filter-date').value;
+            const container = document.getElementById('file-logs-list');
+
+            const filtered = allLogs.filter(log => {
+                // Status Filter
+                if (statusFilter !== 'all') {
+                    const logStatus = (log.status || '').toLowerCase();
+                    if (statusFilter === 'success' && logStatus !== 'success') return false;
+                    if (statusFilter === 'failed' && logStatus === 'success') return false;
+                }
+
+                // Date Filter
+                if (dateFilter) {
+                    const logDate = new Date(log.sentAt || log.createdAt).toISOString().split('T')[0];
+                    if (logDate !== dateFilter) return false;
+                }
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #999;">No records match your filters</td></tr>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(log => `
+                <tr>
+                    <td>${new Date(log.sentAt || log.createdAt).toLocaleDateString()}</td>
+                    <td>${log.patientName || log.patientEmail}</td>
+                    <td><a href="${log.fileUrl || log.filePath}" target="_blank" style="color: #351C42; font-weight: 600;">View</a></td>
+                    <td><span style="color: ${log.status === 'success' ? 'green' : 'red'};">${log.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Event Listeners for Filters
+        document.getElementById('filter-status').addEventListener('change', renderLogs);
+        document.getElementById('filter-date').addEventListener('change', renderLogs);
+
+        // Load logs on page load
+        fetchFileLogs();
+    </script>
+</body>
+
+</html>
+
