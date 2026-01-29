@@ -9438,6 +9438,11 @@ figure {
   .our-journey-single-point-block {
     padding-left: 10px;
     padding-right: 10px;
+    grid-template-columns: 1fr 1fr 0.75fr;
+  }
+
+  .our-journey-heading-text-block {
+    grid-template-columns: 1fr 1fr 0.75fr;
   }
 
   .our-journey-image {
