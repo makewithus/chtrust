@@ -6024,7 +6024,7 @@ figure {
 }
 
 .blog-hero-wrapper {
-  background-image: linear-gradient(#0000 20%, #000000d9), url("../68da489ee8fe2e090f607d92_Blog Hero Image-min.jpg");
+  background-image: linear-gradient(#0000 20%, #000000d9), url("../assets/bloghero.jpeg");
   background-position: 0 0, 50%;
   background-size: auto, cover;
   border-radius: 16px;
