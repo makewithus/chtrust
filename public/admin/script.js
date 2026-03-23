@@ -209,8 +209,12 @@ const handleDeleteBlog = async (id) => {
     const confirmDelete = window.confirm('Are you sure you want to permanently delete this blog?');
     if (!confirmDelete) return;
 
-    const btn = document.querySelector(`button[data-id="${id}"]`);
-    const row = btn ? btn.closest('tr') : null;
+    // Find row by looping over rows — avoids CSS selector issues with Firestore IDs
+    let row = null;
+    const allRows = blogsList.querySelectorAll('tr');
+    for (const r of allRows) {
+        if (r.dataset.blogId === id) { row = r; break; }
+    }
 
     try {
         if (row) row.style.opacity = '0.3';
@@ -266,7 +270,7 @@ async function fetchBlogs() {
                 // Use actual Firestore document ID (id takes precedence, fallback to _id for compatibility)
                 const blogId = blog.id || blog._id;
                 return `
-                <tr>
+                <tr data-blog-id="${blogId}">
                     <td><img src="${blog.featuredImage || 'https://placehold.co/100x100?text=No+Image'}" class="thumb-small" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;"></td>
                     <td><strong>${blog.title}</strong></td>
                     <td><span class="badge ${blog.status === 'published' ? 'bg-success' : 'bg-secondary'}">${blog.status}</span></td>

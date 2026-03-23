@@ -14,11 +14,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from root directory
-app.use(express.static(__dirname));
-
-// Ensure /js routes work locally by mapping /js to public/js
+// Ensure /js and /videos routes work locally — must be BEFORE the generic static handler
 app.use('/js', express.static(path.join(__dirname, 'public/js')));
+app.use('/videos', express.static(path.join(__dirname, 'public/videos')));
+
+// Serve static files from root directory (fallback)
+app.use(express.static(__dirname));
 
 // File upload configuration
 const storage = multer.diskStorage({
